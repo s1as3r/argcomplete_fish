@@ -1,0 +1,17 @@
+[project]
+name = "argcomplete_fish"
+authors = [
+  { name = "Arbaaz Shafiq", email = "arbaazshafiq@gmail.com" }
+]
+version = "0.1.0"
+description = "Generate fish comlpetions for python argparse parsers"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+argcomplete-fish = "argcomplete_fish.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
