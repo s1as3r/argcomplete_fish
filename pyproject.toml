@@ -30,3 +30,5 @@ indent-width = 4
 exclude = ["tests/**"]
 select = ["F", "E", "I", "N", "ANN", "PL", "RUF", "B"]
 ignore = []
+
+[tool.ruff.format]
