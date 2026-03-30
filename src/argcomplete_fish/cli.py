@@ -43,6 +43,13 @@ def get_cli_parser() -> ArgumentParser:
         "~/.config/fish/completions/<name>.fish).",
     )
 
+    parser.add_argument(
+        "--print",
+        action="store_true",
+        dest="force_print",
+        help="Force print the completions to stdout, "
+        "even if an output file is specified.",
+    )
     return parser
 
 
@@ -99,7 +106,8 @@ def main() -> None:
         with output_path.open(mode) as f:
             f.write(completions)
             f.write("\n")
-    else:
+
+    if not output_path or args.force_print:
         print(completions)
 
 

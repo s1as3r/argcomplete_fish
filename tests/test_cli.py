@@ -108,6 +108,29 @@ def test_cli_auto_save_fallback(mocker):
             assert "complete -c my_global" in content
 
 
+def test_cli_force_print(mocker, capsys):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        out_path = Path(tmpdir) / "out.fish"
+        mocker.patch(
+            "sys.argv",
+            [
+                "argcomplete-fish",
+                "tests.test_inspector:parser",
+                "-o",
+                str(out_path),
+                "--print",
+            ],
+        )
+        main()
+
+        with out_path.open("r") as f:
+            content = f.read()
+            assert "complete -c my_global" in content
+
+        captured = capsys.readouterr()
+        assert "complete -c my_global" in captured.out
+
+
 @pytest.mark.parametrize(
     "invalid_prog_name",
     [
