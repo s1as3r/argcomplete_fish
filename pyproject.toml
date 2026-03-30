@@ -25,8 +25,8 @@ dev-dependencies = [
 [tool.ruff]
 line-length = 88
 indent-width = 4
-exclude = ["tests/"]
 
 [tool.ruff.lint]
-select = ["F", "E", "I", "N", "ANN", "PL", "RUF"]
+exclude = ["tests/**"]
+select = ["F", "E", "I", "N", "ANN", "PL", "RUF", "B"]
 ignore = []
