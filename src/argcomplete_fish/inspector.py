@@ -41,7 +41,9 @@ def load_parser(target: str) -> ArgumentParser:
         )
 
     try:
-        obj = getattr(module, object_name)
+        obj = module
+        for part in object_name.split("."):
+            obj = getattr(obj, part)
     except AttributeError:
         raise AttributeError(f"Module '{module_path}' has no attribute '{object_name}'")
 
