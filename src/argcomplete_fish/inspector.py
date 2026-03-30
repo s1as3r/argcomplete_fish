@@ -1,7 +1,7 @@
-import os
 import sys
 from argparse import ArgumentParser
 from importlib import import_module
+from pathlib import Path
 from typing import cast
 
 
@@ -28,7 +28,7 @@ def load_parser(target: str) -> ArgumentParser:
     module_path, object_name = target.split(":", 1)
 
     # add current working directory to sys.path to allow loading local modules
-    cwd = os.getcwd()
+    cwd = str(Path.cwd())
     if cwd not in sys.path:
         sys.path.insert(0, cwd)
     if "" not in sys.path:

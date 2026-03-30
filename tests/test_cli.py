@@ -1,5 +1,6 @@
 import os
 import tempfile
+from pathlib import Path
 
 import pytest
 
@@ -16,31 +17,31 @@ def test_cli_output_stdout(mocker, capsys):
 
 def test_cli_output_file(mocker):
     with tempfile.TemporaryDirectory() as tmpdir:
-        out_path = os.path.join(tmpdir, "out.fish")
+        out_path = Path(tmpdir) / "out.fish"
         mocker.patch(
             "sys.argv",
-            ["argcomplete-fish", "tests.test_inspector:parser", "-o", out_path],
+            ["argcomplete-fish", "tests.test_inspector:parser", "-o", str(out_path)],
         )
         main()
 
-        with open(out_path, "r") as f:
+        with out_path.open("r") as f:
             content = f.read()
             assert "complete -c my_global" in content
 
 
 def test_cli_append_file(mocker):
     with tempfile.TemporaryDirectory() as tmpdir:
-        out_path = os.path.join(tmpdir, "out.fish")
-        with open(out_path, "w") as f:
+        out_path = Path(tmpdir) / "out.fish"
+        with out_path.open("w") as f:
             f.write("# existing file\n")
 
         mocker.patch(
             "sys.argv",
-            ["argcomplete-fish", "tests.test_inspector:parser", "-a", out_path],
+            ["argcomplete-fish", "tests.test_inspector:parser", "-a", str(out_path)],
         )
         main()
 
-        with open(out_path, "r") as f:
+        with out_path.open("r") as f:
             content = f.read()
             assert "# existing file" in content
             assert "complete -c my_global" in content
@@ -69,6 +70,42 @@ def test_cli_invalid_target(mocker, capsys):
     assert e.value.code == 1
     captured = capsys.readouterr()
     assert "Error loading parser" in captured.err
+
+
+def test_cli_auto_save_with_xdg(mocker):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        mocker.patch.dict(os.environ, {"XDG_CONFIG_HOME": tmpdir})
+        mocker.patch(
+            "sys.argv",
+            ["argcomplete-fish", "tests.test_inspector:parser", "--auto-save"],
+        )
+        main()
+
+        expected_path = Path(tmpdir) / "fish" / "completions" / "my_global.fish"
+        assert expected_path.exists()
+        with expected_path.open("r") as f:
+            content = f.read()
+            assert "complete -c my_global" in content
+
+
+def test_cli_auto_save_fallback(mocker):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        # delete XDG_CONFIG_HOME if present
+        mocker.patch.dict(os.environ, {}, clear=True)
+        mocker.patch("pathlib.Path.home", return_value=Path(tmpdir))
+        mocker.patch(
+            "sys.argv",
+            ["argcomplete-fish", "tests.test_inspector:parser", "--auto-save"],
+        )
+        main()
+
+        expected_path = (
+            Path(tmpdir) / ".config" / "fish" / "completions" / "my_global.fish"
+        )
+        assert expected_path.exists()
+        with expected_path.open("r") as f:
+            content = f.read()
+            assert "complete -c my_global" in content
 
 
 @pytest.mark.parametrize(
