@@ -35,7 +35,7 @@ def get_cli_parser() -> ArgumentParser:
     return parser
 
 
-def main():
+def main() -> None:
     parser = get_cli_parser()
     args = parser.parse_args()
 

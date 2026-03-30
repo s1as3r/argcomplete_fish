@@ -65,14 +65,72 @@ def _generate_action_completion(
 
     if has_opts:
         commands.append(f"complete -c {shlex.quote(cmd_name)} {cond_str}{flags_str}")
-    else:
-        # positional argument
-        if action.choices:
-            commands.append(
-                f'complete -c {shlex.quote(cmd_name)} {cond_str}-a {shlex.quote(choices_str)} -d "{help_str}"'
-            )
+    # positional argument
+    elif action.choices:
+        commands.append(
+            f"complete -c {shlex.quote(cmd_name)} {cond_str}-a "
+            f'{shlex.quote(choices_str)} -d "{help_str}"'
+        )
 
     return commands
+
+
+def _generate_subcommand_completions(
+    command_name: str,
+    subparsers_action: argparse._SubParsersAction,
+    global_cond: str,
+    help_formatter: argparse.HelpFormatter | None,
+) -> list[str]:
+    """Generate Fish completion commands for subcommands."""
+    lines = []
+    lines.append("")
+    lines.append("# Subcommands")
+
+    help_by_subcmd = {}
+    if hasattr(subparsers_action, "_choices_actions"):
+        for act in subparsers_action._choices_actions:
+            help_by_subcmd[act.dest] = act.help
+
+    # we can determine aliases by mapping subparser instances to their first known dest
+    parser_to_help = {}
+    if hasattr(subparsers_action, "_choices_actions"):
+        for act in subparsers_action._choices_actions:
+            if (
+                hasattr(subparsers_action, "choices")
+                and act.dest in subparsers_action.choices
+            ):
+                parser_to_help[id(subparsers_action.choices[act.dest])] = act.help
+
+    if hasattr(subparsers_action, "choices") and subparsers_action.choices:
+        for subcmd_name, subparser in subparsers_action.choices.items():
+            help_str = help_by_subcmd.get(
+                subcmd_name,
+                parser_to_help.get(
+                    id(subparser), getattr(subparser, "description", "") or ""
+                ),
+            )
+
+            help_str = _escape_help(help_str)
+            help_flag = f'-d "{help_str}"' if help_str else ""
+
+            cond_str = f"-n {shlex.quote(global_cond)} " if global_cond else ""
+            lines.append(
+                f"complete -c {shlex.quote(command_name)} -f {cond_str}-a "
+                f"{shlex.quote(subcmd_name)} {help_flag}"
+            )
+
+            cond = f"__fish_seen_subcommand_from {shlex.quote(subcmd_name)}"
+            if hasattr(subparser, "_actions"):
+                for action in subparser._actions:
+                    for cmd in _generate_action_completion(
+                        command_name,
+                        action,
+                        condition=cond,
+                        formatter=help_formatter,
+                    ):
+                        lines.append(cmd)
+
+    return lines
 
 
 def generate_fish_completions(
@@ -124,41 +182,15 @@ def generate_fish_completions(
             lines.append(cmd)
 
     # generate subcommands
-    if subparsers_action and subparsers_action.choices:
-        lines.append("")
-        lines.append("# Subcommands")
-
-        help_by_subcmd = {}
-        if hasattr(subparsers_action, "_choices_actions"):
-            for act in subparsers_action._choices_actions:
-                help_by_subcmd[act.dest] = act.help
-
-        # we can determine aliases by mapping subparser instances to their first known dest
-        parser_to_help = {}
-        if hasattr(subparsers_action, "_choices_actions"):
-            for act in subparsers_action._choices_actions:
-                if act.dest in subparsers_action.choices:
-                    parser_to_help[id(subparsers_action.choices[act.dest])] = act.help
-
-        for subcmd_name, subparser in subparsers_action.choices.items():
-            help_str = help_by_subcmd.get(
-                subcmd_name,
-                parser_to_help.get(id(subparser), subparser.description or ""),
+    if (
+        subparsers_action
+        and hasattr(subparsers_action, "choices")
+        and subparsers_action.choices
+    ):
+        lines.extend(
+            _generate_subcommand_completions(
+                command_name, subparsers_action, global_cond, help_formatter
             )
-
-            help_str = _escape_help(help_str)
-            help_flag = f'-d "{help_str}"' if help_str else ""
-
-            cond_str = f"-n {shlex.quote(global_cond)} " if global_cond else ""
-            lines.append(
-                f"complete -c {shlex.quote(command_name)} -f {cond_str}-a {shlex.quote(subcmd_name)} {help_flag}"
-            )
-
-            cond = f"__fish_seen_subcommand_from {shlex.quote(subcmd_name)}"
-            for action in subparser._actions:
-                for cmd in _generate_action_completion(
-                    command_name, action, condition=cond, formatter=help_formatter
-                ):
-                    lines.append(cmd)
+        )
 
     return "\n".join(lines)

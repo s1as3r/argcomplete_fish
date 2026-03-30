@@ -49,7 +49,12 @@ def test_cli_append_file(mocker):
 def test_cli_name_override(mocker, capsys):
     mocker.patch(
         "sys.argv",
-        ["argcomplete-fish", "tests.test_inspector:parser", "--name", "my_custom_cmd"],
+        [
+            "argcomplete-fish",
+            "tests.test_inspector:parser",
+            "--name",
+            "my_custom_cmd",
+        ],
     )
     main()
     captured = capsys.readouterr()

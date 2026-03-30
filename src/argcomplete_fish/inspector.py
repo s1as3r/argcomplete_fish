@@ -10,7 +10,8 @@ def load_parser(target: str) -> ArgumentParser:
     Load an `ArgumentParser` from a string path ().
 
     ## Parameters
-        target (str): string path to an Argument Parser (e.g: 'my_module:parser' or 'my_module:get_parser')
+        target (str): string path to an Argument Parser
+            (e.g: 'my_module:parser' or 'my_module:get_parser')
 
     ## Returns
         ArgumentParser: the loaded ArgumentParser object
@@ -38,14 +39,16 @@ def load_parser(target: str) -> ArgumentParser:
     except ImportError as e:
         raise ImportError(
             f"Could not import module '{module_path}'.\n\nUnderlying Error: {e}"
-        )
+        ) from e
 
     try:
         obj = module
         for part in object_name.split("."):
             obj = getattr(obj, part)
-    except AttributeError:
-        raise AttributeError(f"Module '{module_path}' has no attribute '{object_name}'")
+    except AttributeError as e:
+        raise AttributeError(
+            f"Module '{module_path}' has no attribute '{object_name}'"
+        ) from e
 
     if callable(obj):
         obj = obj()
