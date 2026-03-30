@@ -1,0 +1,13 @@
+name: ruff checks
+
+on: [push, pull_request]
+
+jobs:
+  ruff:
+    if: "!contains(github.event.commits[0].message, '[skip ci]')"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/ruff-action@v3
+      - run: ruff check
