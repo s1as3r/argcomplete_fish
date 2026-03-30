@@ -45,14 +45,24 @@ def main() -> None:
         print(f"Error loading parser from '{args.target}': {e}", file=sys.stderr)
         sys.exit(1)
 
-    command_name = args.name or target_parser.prog
-    if not command_name or command_name == "argparse":
-        print(
-            "Warning: Could not infer a meaningful command name from the parser. "
-            "Please provide one with --name.",
-            file=sys.stderr,
-        )
-        command_name = command_name or "unknown_command"
+    command_name = args.name
+    if not command_name:
+        inferred_name = target_parser.prog.strip()
+        if inferred_name in (
+            "argcomplete-fish",
+            "cli.py",
+            "python -m src.argcomplete_fish.cli",
+            "",
+        ):
+            print(
+                "Warning: Could not infer a meaningful command name from the parser "
+                f"({inferred_name}).\n"
+                "Please provide one with --name.",
+                file=sys.stderr,
+            )
+            command_name = "unknown_command"
+        else:
+            command_name = inferred_name
 
     completions = generate_fish_completions(target_parser, command_name)
 
