@@ -69,3 +69,57 @@ def test_cli_invalid_target(mocker, capsys):
     assert e.value.code == 1
     captured = capsys.readouterr()
     assert "Error loading parser" in captured.err
+
+
+@pytest.mark.parametrize(
+    "invalid_prog_name",
+    [
+        "argcomplete-fish",
+        "cli.py",
+        "python -m src.argcomplete_fish.cli",
+        "",
+        "   ",
+    ],
+)
+def test_cli_improper_inference_fallback(mocker, capsys, invalid_prog_name):
+    mock_parser = mocker.MagicMock()
+    mock_parser.prog = invalid_prog_name
+    mocker.patch("argcomplete_fish.cli.load_parser", return_value=mock_parser)
+    mocker.patch("sys.argv", ["argcomplete-fish", "tests.test_inspector:parser"])
+
+    main()
+
+    captured = capsys.readouterr()
+    assert "Warning: Could not infer a meaningful command name" in captured.err
+    assert "Fish completions for unknown_command" in captured.out
+
+
+@pytest.mark.parametrize(
+    "invalid_prog_name",
+    [
+        "argcomplete-fish",
+        "cli.py",
+        "python -m src.argcomplete_fish.cli",
+        "",
+        "   ",
+    ],
+)
+def test_cli_improper_inference_with_override(mocker, capsys, invalid_prog_name):
+    mock_parser = mocker.MagicMock()
+    mock_parser.prog = invalid_prog_name
+    mocker.patch("argcomplete_fish.cli.load_parser", return_value=mock_parser)
+    mocker.patch(
+        "sys.argv",
+        [
+            "argcomplete-fish",
+            "tests.test_inspector:parser",
+            "--name",
+            "my_explicit_name",
+        ],
+    )
+
+    main()
+
+    captured = capsys.readouterr()
+    assert "Warning: Could not infer a meaningful command name" not in captured.err
+    assert "Fish completions for my_explicit_name" in captured.out
