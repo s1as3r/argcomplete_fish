@@ -126,8 +126,19 @@ def generate_fish_completions(
             for act in subparsers_action._choices_actions:
                 help_by_subcmd[act.dest] = act.help
 
+        # we can determine aliases by mapping subparser instances to their first known dest
+        parser_to_help = {}
+        if hasattr(subparsers_action, "_choices_actions"):
+            for act in subparsers_action._choices_actions:
+                if act.dest in subparsers_action.choices:
+                    parser_to_help[id(subparsers_action.choices[act.dest])] = act.help
+
         for subcmd_name, subparser in subparsers_action.choices.items():
-            help_str = help_by_subcmd.get(subcmd_name, subparser.description or "")
+            help_str = help_by_subcmd.get(
+                subcmd_name,
+                parser_to_help.get(id(subparser), subparser.description or ""),
+            )
+
             help_str = _escape_help(help_str)
             help_flag = f'-d "{help_str}"' if help_str else ""
 
