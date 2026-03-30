@@ -11,7 +11,10 @@ def _escape_help(text: str) -> str:
 
 
 def _generate_action_completion(
-    cmd_name: str, action: argparse.Action, condition: str = ""
+    cmd_name: str,
+    action: argparse.Action,
+    condition: str = "",
+    formatter: argparse.HelpFormatter | None = None,
 ) -> list[str]:
     """Generate Fish completion commands for a single argparse action."""
     commands = []
@@ -49,11 +52,11 @@ def _generate_action_completion(
     if action.help == argparse.SUPPRESS:
         return []
 
-    help_str = (
-        _escape_help(action.help)
-        if action.help and isinstance(action.help, str)
-        else ""
-    )
+    help_raw = action.help if action.help and isinstance(action.help, str) else ""
+    if help_raw and formatter:
+        help_raw = formatter._expand_help(action)
+
+    help_str = _escape_help(help_raw)
     if help_str:
         flags.append(f'-d "{help_str}"')
 
@@ -110,9 +113,13 @@ def generate_fish_completions(
         global_cond = f"not __fish_seen_subcommand_from {all_subcmds}"
 
     # generate global options
+    help_formatter = parser._get_formatter()
     for action in global_actions:
         for cmd in _generate_action_completion(
-            command_name, action, condition=global_cond
+            command_name,
+            action,
+            condition=global_cond,
+            formatter=help_formatter,
         ):
             lines.append(cmd)
 
@@ -150,7 +157,7 @@ def generate_fish_completions(
             cond = f"__fish_seen_subcommand_from {shlex.quote(subcmd_name)}"
             for action in subparser._actions:
                 for cmd in _generate_action_completion(
-                    command_name, action, condition=cond
+                    command_name, action, condition=cond, formatter=help_formatter
                 ):
                     lines.append(cmd)
 
