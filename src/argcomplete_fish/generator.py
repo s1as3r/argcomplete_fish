@@ -46,7 +46,14 @@ def _generate_action_completion(
             )  # exclusive: no file completion since choices are provided
             flags.append(f"-a {shlex.quote(choices_str)}")
 
-    help_str = _escape_help(action.help) if action.help else ""
+    if action.help == argparse.SUPPRESS:
+        return []
+
+    help_str = (
+        _escape_help(action.help)
+        if action.help and isinstance(action.help, str)
+        else ""
+    )
     if help_str:
         flags.append(f'-d "{help_str}"')
 
