@@ -1,13 +1,13 @@
+import logging
 import os
 import sys
 from argparse import ArgumentParser
-from logging import getLogger
 from pathlib import Path
 
 from .generator import generate_fish_completions
 from .inspector import load_parser
 
-logger = getLogger(__name__)
+logger = logging.getLogger(__name__)
 
 
 def get_cli_parser() -> ArgumentParser:
