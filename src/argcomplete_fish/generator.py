@@ -80,7 +80,7 @@ def _generate_action_completion(
     # positional argument
     elif action.choices:
         cmd = (
-            f"complete -c {shlex.quote(cmd_name)} {cond_str}-a "
+            f"complete -c {shlex.quote(cmd_name)} {cond_str}-f -a "
             f'{shlex.quote(choices_str)} -d "{help_str}"'
         )
         logger.debug(f"Generated positional choices command: {cmd}")

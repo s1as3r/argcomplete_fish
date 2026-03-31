@@ -28,7 +28,7 @@ def test_generate_positional_with_choices():
 
     script = generate_fish_completions(p, "mycmd")
 
-    assert "complete -c mycmd -a 'up down' -d \"Direction to go\"" in script
+    assert "complete -c mycmd -f -a 'up down' -d \"Direction to go\"" in script
 
 
 def test_generate_flags_with_choices():
