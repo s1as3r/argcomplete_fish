@@ -63,13 +63,12 @@ def test_cli_name_override(mocker, capsys):
     assert "my_global" not in captured.out
 
 
-def test_cli_invalid_target(mocker, capsys):
+def test_cli_invalid_target(mocker, caplog):
     mocker.patch("sys.argv", ["argcomplete-fish", "invalid_target"])
     with pytest.raises(SystemExit) as e:
         main()
     assert e.value.code == 1
-    captured = capsys.readouterr()
-    assert "Error loading parser" in captured.err
+    assert "Error loading parser" in caplog.text
 
 
 def test_cli_auto_save_with_xdg(mocker):
@@ -141,7 +140,7 @@ def test_cli_force_print(mocker, capsys):
         "   ",
     ],
 )
-def test_cli_improper_inference_fallback(mocker, capsys, invalid_prog_name):
+def test_cli_improper_inference_fallback(mocker, capsys, caplog, invalid_prog_name):
     mock_parser = mocker.MagicMock()
     mock_parser.prog = invalid_prog_name
     mocker.patch("argcomplete_fish.cli.load_parser", return_value=mock_parser)
@@ -150,7 +149,7 @@ def test_cli_improper_inference_fallback(mocker, capsys, invalid_prog_name):
     main()
 
     captured = capsys.readouterr()
-    assert "Warning: Could not infer a meaningful command name" in captured.err
+    assert "Could not infer a meaningful command name" in caplog.text
     assert "Fish completions for unknown_command" in captured.out
 
 
@@ -164,7 +163,9 @@ def test_cli_improper_inference_fallback(mocker, capsys, invalid_prog_name):
         "   ",
     ],
 )
-def test_cli_improper_inference_with_override(mocker, capsys, invalid_prog_name):
+def test_cli_improper_inference_with_override(
+    mocker, capsys, caplog, invalid_prog_name
+):
     mock_parser = mocker.MagicMock()
     mock_parser.prog = invalid_prog_name
     mocker.patch("argcomplete_fish.cli.load_parser", return_value=mock_parser)
@@ -181,5 +182,5 @@ def test_cli_improper_inference_with_override(mocker, capsys, invalid_prog_name)
     main()
 
     captured = capsys.readouterr()
-    assert "Warning: Could not infer a meaningful command name" not in captured.err
+    assert "Could not infer a meaningful command name" not in caplog.text
     assert "Fish completions for my_explicit_name" in captured.out

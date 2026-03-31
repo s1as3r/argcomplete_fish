@@ -1,5 +1,8 @@
 import argparse
 import shlex
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
 def _escape_help(text: str) -> str:
@@ -17,6 +20,12 @@ def _generate_action_completion(
     formatter: argparse.HelpFormatter | None = None,
 ) -> list[str]:
     """Generate Fish completion commands for a single argparse action."""
+    logger.debug(
+        f"Processing action: dest={action.dest!r}, "
+        f"option_strings={action.option_strings}, "
+        f"nargs={action.nargs!r}, choices={action.choices}"
+    )
+
     commands = []
     flags = []
 
@@ -50,6 +59,7 @@ def _generate_action_completion(
             flags.append(f"-a {shlex.quote(choices_str)}")
 
     if action.help == argparse.SUPPRESS:
+        logger.debug(f"Action suppressed: dest={action.dest!r}")
         return []
 
     help_raw = action.help if action.help and isinstance(action.help, str) else ""
@@ -64,13 +74,19 @@ def _generate_action_completion(
     cond_str = f"-n {shlex.quote(condition)} " if condition else ""
 
     if has_opts:
-        commands.append(f"complete -c {shlex.quote(cmd_name)} {cond_str}{flags_str}")
+        cmd = f"complete -c {shlex.quote(cmd_name)} {cond_str}{flags_str}"
+        logger.debug(f"Generated option command: {cmd}")
+        commands.append(cmd)
     # positional argument
     elif action.choices:
-        commands.append(
+        cmd = (
             f"complete -c {shlex.quote(cmd_name)} {cond_str}-a "
             f'{shlex.quote(choices_str)} -d "{help_str}"'
         )
+        logger.debug(f"Generated positional choices command: {cmd}")
+        commands.append(cmd)
+    else:
+        logger.debug("Skipped action (no options or choices)")
 
     return commands
 
@@ -103,6 +119,7 @@ def _generate_subcommand_completions(
 
     if hasattr(subparsers_action, "choices") and subparsers_action.choices:
         for subcmd_name, subparser in subparsers_action.choices.items():
+            logger.debug(f"Processing subcommand: {subcmd_name!r}")
             help_str = help_by_subcmd.get(
                 subcmd_name,
                 parser_to_help.get(
@@ -148,6 +165,8 @@ def generate_fish_completions(
     """
     if not command_name:
         command_name = parser.prog
+
+    logger.debug(f"Starting Fish completion generation for command: {command_name!r}")
 
     lines = []
     lines.append(f"# Fish completions for {command_name}")

@@ -1,8 +1,11 @@
 import sys
 from argparse import ArgumentParser
 from importlib import import_module
+from logging import getLogger
 from pathlib import Path
 from typing import cast
+
+logger = getLogger(__name__)
 
 
 def load_parser(target: str) -> ArgumentParser:
@@ -26,6 +29,7 @@ def load_parser(target: str) -> ArgumentParser:
         raise ValueError("Target must be in the format 'module.path:parser_name'")
 
     module_path, object_name = target.split(":", 1)
+    logger.debug(f"Loading parser: module={module_path!r}, object={object_name!r}")
 
     # add current working directory to sys.path to allow loading local modules
     cwd = str(Path.cwd())
@@ -35,6 +39,7 @@ def load_parser(target: str) -> ArgumentParser:
         sys.path.insert(0, "")
 
     try:
+        logger.debug(f"Importing module {module_path!r}")
         module = import_module(module_path)
     except ImportError as e:
         raise ImportError(
@@ -51,6 +56,7 @@ def load_parser(target: str) -> ArgumentParser:
         ) from e
 
     if callable(obj):
+        logger.debug(f"Target {object_name!r} is callable, calling it")
         obj = obj()
 
     if not isinstance(obj, ArgumentParser):
@@ -58,4 +64,5 @@ def load_parser(target: str) -> ArgumentParser:
             f"Target '{target}' is not an argparse.ArgumentParser (got {type(obj)})"
         )
 
+    logger.debug(f"Successfully loaded ArgumentParser from {target!r}")
     return cast(ArgumentParser, obj)

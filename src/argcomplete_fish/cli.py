@@ -1,10 +1,13 @@
 import os
 import sys
 from argparse import ArgumentParser
+from logging import getLogger
 from pathlib import Path
 
 from .generator import generate_fish_completions
 from .inspector import load_parser
+
+logger = getLogger(__name__)
 
 
 def get_cli_parser() -> ArgumentParser:
@@ -50,6 +53,11 @@ def get_cli_parser() -> ArgumentParser:
         help="Force print the completions to stdout, "
         "even if an output file is specified.",
     )
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        help="Enable debug logging.",
+    )
     return parser
 
 
@@ -57,10 +65,17 @@ def main() -> None:
     parser = get_cli_parser()
     args = parser.parse_args()
 
+    log_level = logging.DEBUG if args.debug else logging.WARNING
+    logging.basicConfig(
+        level=log_level,
+        format="%(levelname)s [%(name)s] %(message)s",
+        stream=sys.stderr,
+    )
+
     try:
         target_parser = load_parser(args.target)
     except Exception as e:
-        print(f"Error loading parser from '{args.target}': {e}", file=sys.stderr)
+        logger.error(f"Error loading parser from '{args.target}': {e}")
         sys.exit(1)
 
     command_name = args.name
@@ -72,11 +87,10 @@ def main() -> None:
             "python -m src.argcomplete_fish.cli",
             "",
         ):
-            print(
-                "Warning: Could not infer a meaningful command name from the parser "
+            logger.warning(
+                "Could not infer a meaningful command name from the parser "
                 f"({inferred_name}).\n"
-                "Please provide one with --name.",
-                file=sys.stderr,
+                "Please provide one with --name."
             )
             command_name = "unknown_command"
         else:
